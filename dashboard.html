@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Hostel | AI Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #f4f7f6;
+            --sidebar: #1a252f;
+            --success: #27ae60;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { display: flex; background: var(--bg); height: 100vh; overflow: hidden; }
+
+        /* Sidebar Styling */
+        nav { width: 250px; background: var(--sidebar); color: white; padding: 20px; display: flex; flex-direction: column; }
+        nav h2 { font-size: 1.2rem; margin-bottom: 30px; color: var(--accent); border-bottom: 1px solid #34495e; padding-bottom: 10px; }
+        nav a { color: #bdc3c7; text-decoration: none; padding: 15px 10px; border-radius: 5px; margin-bottom: 5px; transition: 0.3s; cursor: pointer; }
+        nav a:hover, nav a.active { background: #34495e; color: white; }
+        nav a i { margin-right: 10px; }
+
+        /* Main Content */
+        main { flex: 1; padding: 25px; overflow-y: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        /* Grid Layout */
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        /* Video Feed Placeholder */
+        .video-feed { width: 100%; height: 400px; background: #000; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; color: white; overflow: hidden; }
+        .live-tag { position: absolute; top: 15px; left: 15px; background: var(--accent); padding: 5px 10px; border-radius: 4px; font-weight: bold; animation: blink 1.5s infinite; }
+
+        /* Voice Control UI */
+        .voice-section { text-align: center; padding: 20px; }
+        #voiceBtn { background: var(--primary); color: white; border: none; padding: 15px 30px; border-radius: 50px; cursor: pointer; font-size: 1rem; }
+        #voiceBtn.listening { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        #statusText { margin-top: 10px; color: #7f8c8d; font-style: italic; }
+
+        /* Form for Adding Face */
+        .face-form input, .face-form button { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .face-form button { background: var(--success); color: white; border: none; cursor: pointer; font-weight: bold; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>HOSTEL SECURE AI</h2>
+        <a class="active"><i class="fas fa-desktop"></i> Dashboard</a>
+        <a onclick="showSection('faceSection')"><i class="fas fa-user-plus"></i> Add Face Data</a>
+        <a><i class="fas fa-history"></i> Logs & History</a>
+        <a><i class="fas fa-cog"></i> Settings</a>
+    </nav>
+
+    <main>
+        <header>
+            <h1>Live Surveillance</h1>
+            <div id="date">Friday, Feb 2026</div>
+        </header>
+
+        <div class="grid">
+            <div class="left-col">
+                <div class="card">
+                    <div class="video-feed">
+                        <span class="live-tag">● LIVE FEED</span>
+                        <i class="fas fa-video fa-3x" style="opacity: 0.2;"></i>
+                        <p style="position: absolute; bottom: 10px;">Camera Node: Entry Door 01</p>
+                    </div>
+                    <div class="voice-section">
+                        <button id="voiceBtn" onclick="startVoice()"><i class="fas fa-microphone"></i> Start Voice Command</button>
+                        <p id="statusText">Click button and say "Open Door" or "Alarm On"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="card" id="faceSection">
+                    <h3><i class="fas fa-id-card"></i> Add Authorized Face</h3>
+                    <form class="face-form" onsubmit="saveFace(event)">
+                        <input type="text" id="userName" placeholder="Full Name" required>
+                        <input type="text" id="userId" placeholder="Student/Staff ID" required>
+                        <input type="file" accept="image/*" required>
+                        <button type="submit">Upload to Database</button>
+                    </form>
+                    <div id="dbMsg" style="margin-top:10px; color: var(--success); display:none;">Successfully added!</div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-bell"></i> Smart Alerts</h3>
+                    <ul style="list-style: none; margin-top: 15px; font-size: 0.9rem;">
+                        <li style="color: var(--accent); padding: 5px 0;">● Intruder detected (02:14 PM)</li>
+                        <li style="color: var(--success); padding: 5px 0;">● Relay 01: Door Unlocked (01:45 PM)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 1. Voice Recognition Logic
+        function startVoice() {
+            const btn = document.getElementById('voiceBtn');
+            const status = document.getElementById('statusText');
+            
+            window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+
+            recognition.onstart = () => {
+                btn.classList.add('listening');
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Listening...';
+                status.innerText = "System is listening for your command...";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                status.innerText = "You said: " + transcript;
+                
+                // Processing the commands (AI Simulation)
+                if (transcript.includes("open door") || transcript.includes("unlock")) {
+                    alert("COMMAND RECEIVED: Unlocking Hostel Entry Door...");
+                    // Here you would send a fetch() request to your ESP32
+                } else if (transcript.includes("alarm on")) {
+                    alert("COMMAND RECEIVED: Triggering Siren!");
+                }
+            };
+
+            recognition.onend = () => {
+                btn.classList.remove('listening');
+                btn.innerHTML = '<i class="fas fa-microphone"></i> Start Voice Command';
+            };
+
+            recognition.start();
+        }
+
+        // 2. Database Add Face Simulation
+        function saveFace(e) {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const msg = document.getElementById('dbMsg');
+            
+            // Logic to send data to your Backend (Python/PHP/Node)
+            console.log("Saving to DB: " + name);
+            
+            msg.style.display = "block";
+            setTimeout(() => msg.style.display = "none", 3000);
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>
